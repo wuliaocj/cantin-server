@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.edu.guet.cantin.mapper.OrderInfoMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="cn.edu.guet.cantin.domain.OrderInfo">
+        <id column="order_id" property="orderId" jdbcType="INTEGER"/>
+        <result column="user_id" property="userId" jdbcType="INTEGER"/>
+        <result column="table_id" property="tableId" jdbcType="INTEGER"/>
+        <result column="order_time" property="orderTime" jdbcType="TIMESTAMP"/>
+        <result column="reservation_start_time" property="reservationStartTime" jdbcType="TIMESTAMP"/>
+        <result column="reservation_end_time" property="reservationEndTime" jdbcType="TIMESTAMP"/>
+        <result column="people_count" property="peopleCount" jdbcType="INTEGER"/>
+        <result column="total_amount" property="totalAmount" jdbcType="DECIMAL"/>
+        <result column="status" property="status" jdbcType="VARCHAR"/>
+        <result column="remarks" property="remarks" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        order_id, user_id, table_id, order_time, reservation_time, people_count, total_amount, status, remarks
+    </sql>
+
+    <!-- 根据用户ID获取订单列表 -->
+    <select id="selectByUserId" resultMap="BaseResultMap">
+        SELECT *
+        FROM order_info
+        WHERE user_id = #{userId}
+        ORDER BY order_time DESC
+    </select>
+
+    <!-- 根据订单状态获取订单列表 -->
+    <select id="selectByStatus" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM order_info
+        WHERE status = #{status}
+        ORDER BY order_time DESC
+    </select>
+
+    <!-- 获取今日订单 -->
+    <select id="selectTodayOrders" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM order_info
+        WHERE DATE(order_time) = CURDATE()
+        ORDER BY order_time DESC
+    </select>
+
+    <!-- 获取订单统计信息 -->
+    <select id="getOrderStatistics" resultType="java.util.Map">
+        SELECT
+            COUNT(*) as total_orders,
+            COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_orders,
+            COUNT(CASE WHEN status = 'confirmed' THEN 1 END) as confirmed_orders,
+            COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_orders,
+            COUNT(CASE WHEN status = 'cancelled' THEN 1 END) as cancelled_orders,
+            SUM(total_amount) as total_revenue
+        FROM order_info
+    </select>
+
+    <!-- 获取用户订单统计 -->
+    <select id="getUserOrderStatistics" resultType="java.util.Map">
+        SELECT
+            COUNT(*) as total_orders,
+            SUM(total_amount) as total_spent,
+            AVG(total_amount) as avg_order_amount
+        FROM order_info
+        WHERE user_id = #{userId}
+    </select>
+
+</mapper>
+

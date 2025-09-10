@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.edu.guet.cantin.mapper.TableInfoMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="cn.edu.guet.cantin.domain.TableInfo">
+        <id column="table_id" property="tableId" jdbcType="INTEGER"/>
+        <result column="table_number" property="tableNumber" jdbcType="VARCHAR"/>
+        <result column="capacity" property="capacity" jdbcType="INTEGER"/>
+        <result column="table_type" property="tableType" jdbcType="VARCHAR"/>
+        <result column="status" property="status" jdbcType="VARCHAR"/>
+        <result column="restaurant_id" property="restaurantId" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        table_id, table_number, capacity, table_type, status, restaurant_id
+    </sql>
+
+    <!-- 获取可用桌位列表 -->
+    <select id="selectAvailableTables" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM table_info 
+        WHERE status = 'available' 
+        ORDER BY table_number
+    </select>
+
+    <!-- 根据桌位类型获取桌位列表 -->
+    <select id="selectByTableType" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM table_info 
+        WHERE table_type = #{tableType} 
+        ORDER BY table_number
+    </select>
+
+    <!-- 根据容纳人数获取桌位列表 -->
+    <select id="selectByCapacity" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM table_info 
+        WHERE capacity >= #{capacity} 
+        AND status = 'available' 
+        ORDER BY capacity, table_number
+    </select>
+
+    <!-- 根据餐厅ID获取桌位列表 -->
+    <select id="selectByRestaurantId" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM table_info 
+        WHERE restaurant_id = #{restaurantId} 
+        ORDER BY table_number
+    </select>
+
+    <!-- 获取桌位统计信息 -->
+    <select id="getTableStatistics" resultType="java.util.Map">
+        SELECT 
+            COUNT(*) as total_tables,
+            COUNT(CASE WHEN status = 'available' THEN 1 END) as available_tables,
+            COUNT(CASE WHEN status = 'reserved' THEN 1 END) as reserved_tables,
+            COUNT(CASE WHEN status = 'occupied' THEN 1 END) as occupied_tables
+        FROM table_info
+    </select>
+
+</mapper>
+

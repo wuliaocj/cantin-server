@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.edu.guet.cantin.mapper.DishMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="cn.edu.guet.cantin.domain.Dish">
+        <id column="dish_id" property="dishId" jdbcType="INTEGER"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="category" property="category" jdbcType="VARCHAR"/>
+        <result column="price" property="price" jdbcType="DECIMAL"/>
+        <result column="description" property="description" jdbcType="VARCHAR"/>
+        <result column="image_url" property="imageUrl" jdbcType="VARCHAR"/>
+        <result column="recommend" property="recommend" jdbcType="INTEGER"/>
+        <result column="stock_status" property="stockStatus" jdbcType="INTEGER"/>
+        <result column="restaurant_id" property="restaurantId" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        dish_id, name, category, price, description, image_url, recommend, stock_status, restaurant_id
+    </sql>
+
+    <!-- 根据分类获取菜品列表 -->
+    <select id="selectByCategory" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM dish 
+        WHERE category = #{category} 
+        AND stock_status = 1 
+        ORDER BY dish_id
+    </select>
+
+    <!-- 获取推荐菜品列表 -->
+    <select id="selectRecommendDishes" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM dish 
+        WHERE recommend = 1 
+        AND stock_status = 1 
+        ORDER BY dish_id 
+        LIMIT 8
+    </select>
+
+    <!-- 搜索菜品 -->
+    <select id="searchDishes" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM dish 
+        WHERE (
+            name LIKE CONCAT('%', #{keyword}, '%')
+            OR description LIKE CONCAT('%', #{keyword}, '%')
+            OR category LIKE CONCAT('%', #{keyword}, '%')
+        )
+        AND stock_status = 1 
+        ORDER BY dish_id
+    </select>
+
+    <!-- 获取所有有库存的菜品 -->
+    <select id="selectAllAvailableDishes" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM dish 
+        WHERE stock_status = 1 
+        ORDER BY category, dish_id
+    </select>
+
+    <!-- 根据餐厅ID获取菜品 -->
+    <select id="selectByRestaurantId" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM dish 
+        WHERE restaurant_id = #{restaurantId} 
+        AND stock_status = 1 
+        ORDER BY category, dish_id
+    </select>
+
+    <!-- 获取菜品分类列表 -->
+    <select id="selectCategories" resultType="java.lang.String">
+        SELECT DISTINCT category 
+        FROM dish 
+        WHERE stock_status = 1 
+        ORDER BY category
+    </select>
+
+    <!-- 获取菜品统计信息 -->
+    <select id="getDishStatistics" resultType="java.util.Map">
+        SELECT 
+            COUNT(*) as total_dishes,
+            COUNT(CASE WHEN recommend = 1 THEN 1 END) as recommend_dishes,
+            COUNT(CASE WHEN stock_status = 0 THEN 1 END) as out_of_stock_dishes
+        FROM dish
+    </select>
+
+</mapper>
+

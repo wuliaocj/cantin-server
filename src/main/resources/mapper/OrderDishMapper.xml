@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.edu.guet.cantin.mapper.OrderDishMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="cn.edu.guet.cantin.domain.OrderDish">
+        <id column="order_dish_id" property="orderDishId" jdbcType="INTEGER"/>
+        <result column="order_id" property="orderId" jdbcType="INTEGER"/>
+        <result column="dish_id" property="dishId" jdbcType="INTEGER"/>
+        <result column="quantity" property="quantity" jdbcType="INTEGER"/>
+        <result column="unit_price" property="unitPrice" jdbcType="DECIMAL"/>
+        <result column="subtotal" property="subtotal" jdbcType="DECIMAL"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        order_dish_id, order_id, dish_id, quantity, unit_price, subtotal
+    </sql>
+
+    <!-- 获取订单详情（包含菜品信息） -->
+    <select id="selectOrderDetails" resultType="java.util.Map">
+        SELECT 
+            od.order_dish_id,
+            od.order_id,
+            od.dish_id,
+            od.quantity,
+            od.unit_price,
+            od.subtotal,
+            d.name as dish_name,
+            d.description as dish_description,
+            d.image_url as dish_image,
+            d.category as dish_category
+        FROM order_dish od
+        LEFT JOIN dish d ON od.dish_id = d.dish_id
+        WHERE od.order_id = #{orderId}
+        ORDER BY od.order_dish_id
+    </select>
+
+    <!-- 获取热门菜品排行 -->
+    <select id="selectPopularDishes" resultType="java.util.Map">
+        SELECT 
+            d.dish_id,
+            d.name,
+            d.category,
+            d.price,
+            d.image_url,
+            COUNT(od.dish_id) as order_count,
+            SUM(od.quantity) as total_quantity,
+            SUM(od.subtotal) as total_revenue
+        FROM dish d
+        LEFT JOIN order_dish od ON d.dish_id = od.dish_id
+        GROUP BY d.dish_id, d.name, d.category, d.price, d.image_url
+        ORDER BY order_count DESC, total_revenue DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 获取菜品销售统计 -->
+    <select id="selectDishSalesStatistics" resultType="java.util.Map">
+        SELECT 
+            d.dish_id,
+            d.name,
+            d.category,
+            COUNT(od.dish_id) as order_count,
+            SUM(od.quantity) as total_quantity,
+            SUM(od.subtotal) as total_revenue,
+            AVG(od.unit_price) as avg_price
+        FROM dish d
+        LEFT JOIN order_dish od ON d.dish_id = od.dish_id
+        LEFT JOIN order_info oi ON od.order_id = oi.order_id
+        WHERE oi.order_time BETWEEN #{startDate} AND #{endDate}
+        GROUP BY d.dish_id, d.name, d.category
+        ORDER BY total_revenue DESC
+    </select>
+
+    <!-- 获取用户点餐偏好 -->
+    <select id="selectUserPreferences" resultType="java.util.Map">
+        SELECT 
+            d.dish_id,
+            d.name,
+            d.category,
+            d.price,
+            d.image_url,
+            COUNT(od.dish_id) as order_count,
+            SUM(od.quantity) as total_quantity,
+            SUM(od.subtotal) as total_spent
+        FROM dish d
+        LEFT JOIN order_dish od ON d.dish_id = od.dish_id
+        LEFT JOIN order_info oi ON od.order_id = oi.order_id
+        WHERE oi.user_id = #{userId}
+        GROUP BY d.dish_id, d.name, d.category, d.price, d.image_url
+        ORDER BY order_count DESC, total_spent DESC
+        LIMIT 10
+    </select>
+
+    <!-- 获取订单菜品统计 -->
+    <select id="selectOrderDishStatistics" resultType="java.util.Map">
+        SELECT 
+            COUNT(*) as dish_count,
+            SUM(quantity) as total_quantity,
+            SUM(subtotal) as total_amount
+        FROM order_dish
+        WHERE order_id = #{orderId}
+    </select>
+
+</mapper>
+
